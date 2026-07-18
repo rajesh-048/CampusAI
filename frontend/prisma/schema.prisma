@@ -1,12 +1,12 @@
-// CampusAI - Prisma Schema for Local SQLite Development
+// CampusAI - Prisma Schema for Production & Local PostgreSQL
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // ============================================================
