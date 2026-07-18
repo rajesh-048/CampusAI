@@ -1,9 +1,13 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+
 fastapi>=0.115.0
 uvicorn[standard]>=0.32.0
 python-dotenv>=1.0.0
 python-multipart>=0.0.9
 
-# AI & ML
+# AI & ML (CPU-only PyTorch to stay under Render 512MB RAM limit)
+torch>=2.0.0
+torchvision>=0.15.0
 langchain-core>=0.3.0
 langchain-community>=0.3.0
 langchain-chroma>=0.2.0
