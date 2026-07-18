@@ -105,7 +105,7 @@ export default function Navbar() {
           {/* Mobile Hamburger */}
           <div className="lg:hidden">
             <Sheet>
-              <SheetTrigger>
+              <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="text-white">
                   <Menu className="w-5 h-5" />
                 </Button>
