@@ -12,5 +12,6 @@ from app.main import app
 import uvicorn
 
 if __name__ == "__main__":
-    print("[CampusAI] AI Microservice starting on http://localhost:8000 ...", flush=True)
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.environ.get("PORT", 8000))
+    print(f"[CampusAI] AI Microservice starting on port {port}...", flush=True)
+    uvicorn.run(app, host="0.0.0.0", port=port)
