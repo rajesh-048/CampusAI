@@ -54,6 +54,7 @@ def get_collection() -> chromadb.Collection:
         _collection = client.get_or_create_collection(
             name=COLLECTION_NAME,
             metadata={"description": "Campus Knowledge Navigator document embeddings"},
+            embedding_function=None,
         )
         logger.info(
             "Collection '%s' ready with %d documents",

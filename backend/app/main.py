@@ -63,14 +63,17 @@ async def lifespan(app: FastAPI):
     logger.info("Upload directory: %s", os.path.abspath(settings.upload_dir))
     logger.info("ChromaDB directory: %s", os.path.abspath(settings.chroma_persist_dir))
 
-    # Initialize vector store
-    try:
-        from app.services import vector_store
-        vector_store.initialize()
-        logger.info("Vector store initialized successfully")
-    except Exception as e:
-        logger.error("Failed to initialize vector store: %s", str(e))
-        logger.warning("The application will start but document search will be unavailable")
+    # Initialize vector store asynchronously so Uvicorn binds port instantly
+    import asyncio
+    async def init_vector_store():
+        try:
+            from app.services import vector_store
+            vector_store.initialize()
+            logger.info("Vector store initialized successfully")
+        except Exception as e:
+            logger.error("Failed to initialize vector store: %s", str(e))
+
+    asyncio.create_task(init_vector_store())
 
     # Log configuration
     logger.info("Embedding model: %s", settings.embedding_model)
