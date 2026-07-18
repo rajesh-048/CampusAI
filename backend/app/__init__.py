@@ -1,0 +1,1 @@
+"""CampusAI Backend Application Package."""

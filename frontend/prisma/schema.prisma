@@ -1,0 +1,365 @@
+// CampusAI - Prisma Schema for Local SQLite Development
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// ============================================================
+// Authentication & Users
+// ============================================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String
+  role          String    @default("STUDENT") // STUDENT, ADMIN
+  department    String?
+  semester      Int?
+  rollNumber    String?   @unique
+  phone         String?
+  avatar        String?
+  isActive      Boolean   @default(true)
+  lastLogin     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  bookmarks     Bookmark[]
+  notifications UserNotification[]
+  searchLogs    SearchLog[]
+  eventRegistrations EventRegistration[]
+
+  @@map("users")
+}
+
+// ============================================================
+// Academic Structure
+// ============================================================
+
+model Department {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  code        String    @unique
+  description String?
+  hodName     String?
+  hodEmail    String?
+  hodPhone    String?
+  image       String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  faculty     Faculty[]
+  timetables  Timetable[]
+
+  @@map("departments")
+}
+
+model Faculty {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  phone        String?
+  designation  String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  departmentId String
+  subjects     String    @default("") // Comma separated subjects
+  office       String?
+  officeHours  String?
+  image        String?
+  bio          String?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("faculty")
+}
+
+// ============================================================
+// Timetable & Schedule
+// ============================================================
+
+model Timetable {
+  id           String    @id @default(cuid())
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  departmentId String
+  semester     Int
+  section      String    @default("A")
+  dayOfWeek    String    // MONDAY, TUESDAY, etc.
+  startTime    String    // "09:00"
+  endTime      String    // "10:00"
+  subject      String
+  faculty      String
+  room         String?
+  type         String    @default("Lecture") // Lecture, Lab, Tutorial
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("timetables")
+}
+
+model AcademicCalendar {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime?
+  eventType   String    // Holiday, Exam, Semester Start, Semester End, etc.
+  isImportant Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("academic_calendar")
+}
+
+model ExamSchedule {
+  id           String    @id @default(cuid())
+  title        String
+  subject      String
+  department   String
+  semester     Int
+  examDate     DateTime
+  startTime    String
+  endTime      String
+  room         String?
+  examType     String    // Internal, External, Supplementary
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("exam_schedules")
+}
+
+// ============================================================
+// Notices & Events
+// ============================================================
+
+model Notice {
+  id          String         @id @default(cuid())
+  title       String
+  content     String
+  category    String         @default("GENERAL") // GENERAL, ACADEMIC, EXAMINATION, etc.
+  priority    String         @default("MEDIUM")  // LOW, MEDIUM, HIGH, URGENT
+  department  String?
+  attachments String         @default("") // Comma separated file paths
+  isPinned    Boolean        @default(false)
+  isArchived  Boolean        @default(false)
+  publishDate DateTime       @default(now())
+  expiryDate  DateTime?
+  createdBy   String
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  // Relations
+  bookmarks   Bookmark[]
+
+  @@map("notices")
+}
+
+model Event {
+  id            String    @id @default(cuid())
+  title         String
+  description   String
+  venue         String?
+  startDate     DateTime
+  endDate       DateTime?
+  poster        String?   // Image path
+  category      String    // Technical, Cultural, Sports, Workshop, etc.
+  department    String?
+  isRegistrationOpen Boolean @default(true)
+  maxParticipants    Int?
+  registrationLink   String?
+  createdBy     String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  registrations EventRegistration[]
+
+  @@map("events")
+}
+
+model EventRegistration {
+  id        String   @id @default(cuid())
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId   String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@unique([eventId, userId])
+  @@map("event_registrations")
+}
+
+// ============================================================
+// Documents & Study Materials
+// ============================================================
+
+model Document {
+  id          String           @id @default(cuid())
+  title       String
+  description String?
+  category    String           // SYLLABUS, PYQ, STUDY_MATERIAL, etc.
+  department  String?
+  semester    Int?
+  subject     String?
+  filePath    String
+  fileType    String           // pdf, docx, pptx, xlsx, csv, image
+  fileSize    Int              // bytes
+  downloads   Int              @default(0)
+  isProcessed Boolean          @default(false)  // AI indexed?
+  vectorIds   String           @default("")     // Comma separated ChromaDB document IDs
+  uploadedBy  String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  // Relations
+  bookmarks   Bookmark[]
+
+  @@map("documents")
+}
+
+// ============================================================
+// Campus Infrastructure
+// ============================================================
+
+model HostelInfo {
+  id          String   @id @default(cuid())
+  name        String
+  type        String   // Boys, Girls
+  warden      String?
+  wardenPhone String?
+  wardenEmail String?
+  capacity    Int?
+  address     String?
+  facilities  String   @default("") // Comma separated facilities
+  rules       String?
+  image       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("hostel_info")
+}
+
+model TransportRoute {
+  id           String   @id @default(cuid())
+  routeNumber  String
+  routeName    String
+  busNumber    String?
+  driver       String?
+  driverPhone  String?
+  departureTime String
+  arrivalTime  String
+  pickupPoints String   @default("") // Comma separated points
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("transport_routes")
+}
+
+model CampusLocation {
+  id          String       @id @default(cuid())
+  name        String
+  type        String       // BUILDING, LAB, CLASSROOM, etc.
+  description String?
+  floor       String?
+  building    String?
+  latitude    Float?
+  longitude   Float?
+  image       String?
+  facilities  String       @default("") // Comma separated facilities
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("campus_locations")
+}
+
+// ============================================================
+// Notifications
+// ============================================================
+
+model Notification {
+  id        String           @id @default(cuid())
+  title     String
+  message   String
+  type      String           @default("INFO") // INFO, WARNING, SUCCESS, ALERT
+  target    String           // "all", department code, semester number, or user ID
+  link      String?
+  createdBy String
+  createdAt DateTime         @default(now())
+
+  // Relations
+  userNotifications UserNotification[]
+
+  @@map("notifications")
+}
+
+model UserNotification {
+  id             String       @id @default(cuid())
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  notificationId String
+  isRead         Boolean      @default(false)
+  readAt         DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@unique([userId, notificationId])
+  @@map("user_notifications")
+}
+
+// ============================================================
+// User Interactions
+// ============================================================
+
+model Bookmark {
+  id         String    @id @default(cuid())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  notice     Notice?   @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  noticeId   String?
+  document   Document? @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  documentId String?
+  createdAt  DateTime  @default(now())
+
+  @@unique([userId, noticeId])
+  @@unique([userId, documentId])
+  @@map("bookmarks")
+}
+
+model SearchLog {
+  id        String   @id @default(cuid())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId    String?
+  query     String
+  results   Int      @default(0)
+  language  String   @default("en")
+  source    String   @default("search") // search, chatbot
+  createdAt DateTime @default(now())
+
+  @@map("search_logs")
+}
+
+// ============================================================
+// Website Content (Admin Editable)
+// ============================================================
+
+model SiteContent {
+  id        String   @id @default(cuid())
+  section   String   @unique // hero, about, features, contact, footer, etc.
+  content   String   // JSON string content
+  updatedBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("site_content")
+}
